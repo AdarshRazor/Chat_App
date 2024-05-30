@@ -1,0 +1,14 @@
+.text-muted {
+    color: white !important; /* Change to the desired color */
+}
+
+form {
+    padding: 10% 30%;
+}
+
+@media only screen and (max-width: 768px) {
+
+    form{
+        padding: 10% 10%;
+    }
+}
