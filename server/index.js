@@ -1,15 +1,15 @@
 const express = require('express');
 const cors = require('cors'); // allow us to interact with frontend
 const mongoose = require('mongoose');
-require('dotenv').config();
 const userRoute = require('./Routes/userRoute')
+const chatRoute = require('./Routes/chatRoute')
 
 const app = express();
+require('dotenv').config();
 
 //allow use to recieve and send json data (Miidleware Func)
 app.use(express.json());
 app.use(cors()); // add extra capabilities to app
-
 
 // Routes and middleware
 app.get('/', (req, res) => {
@@ -17,8 +17,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/users',userRoute)
-
-
+app.use('/api/chats',chatRoute)
 
 // Ports and connections
 const port = process.env.PORT || 5000;

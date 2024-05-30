@@ -19,7 +19,11 @@ create the controller, routes, models
 
 ## Client Folder
 
-create the front-end by installing React
+create the front-end by installing React and then add it to the backend using content api and authContext.jjs
+
+## Chat APP
+
+Will create chat, find chat, get chat, and the main chat box
 
 ## Miscellaneous
 
