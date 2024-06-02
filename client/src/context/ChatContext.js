@@ -32,11 +32,14 @@ export const ChatContextProvider = ({ children, user }) => {
         getUserChats()
     }, [user])
 
-    return <ChatContextProvider value={{
-        userChats,
-        isUserChatsLoading,
-        userChatsError
-    }}>
-        {children}
-    </ChatContextProvider>
+    return (
+        <ChatContext.Provider value={{
+            userChats,
+            isUserChatsLoading,
+            userChatsError
+        }}>
+            {children}
+        </ChatContext.Provider>
+    )
+
 }
