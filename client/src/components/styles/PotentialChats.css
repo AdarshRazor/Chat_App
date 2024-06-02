@@ -1,0 +1,18 @@
+.single-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border: 1px solid red; /* Temporary border for debugging */
+}
+
+.user-name {
+    margin-right: 10px; /* Adjust spacing as needed */
+}
+
+.user-online {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: green;
+}

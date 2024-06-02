@@ -15,11 +15,6 @@ const createToken = (_id) => {
     return jwt.sign({_id}, jwtkey, {expiresIn: '3d'});
 }
 
-// here we can change the output of the route
-// const registerUser = (req, res) => {
-//     res.send('register a new user');
-// }
-
 // since we are using await function then we have to add async
 const registerUser = async (req, res) => {
 
@@ -94,4 +89,33 @@ const loginUser = async (req, res) => {
     }
 }
 
-module.exports = {registerUser, loginUser};
+const findUser = async (req, res) => {
+    const userId = req.params.userId;
+    try{
+        const user = await userModel.findById(userId);
+
+        res.status(200).json(user);
+    } catch (error){
+        console.log(error);
+        //500 means server error
+        res.status(500).json(error);
+    }
+}
+
+// getting all the user
+const getUsers = async (req, res) => {
+    
+    try{
+        // get entire collection
+        const users = await userModel.find();
+
+        res.status(200).json(users);
+    } catch (error){
+        console.log(error);
+        //500 means server error
+        res.status(500).json(error);
+    }
+}
+
+
+module.exports = {registerUser, loginUser, findUser, getUsers};
