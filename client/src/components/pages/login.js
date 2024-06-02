@@ -127,6 +127,9 @@ function Login() {
               </Alert> )}
               
           </Form>
+          <div className='text-center'>
+            <p className='text-muted'>— A chat app that <span className='text-warning'>actually</span> doesn't leak your data. —</p>
+          </div>
     </>
   )
 }
