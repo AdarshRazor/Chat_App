@@ -128,7 +128,7 @@ function Login() {
               
           </Form>
           <div className='text-center'>
-            <p className='text-muted'>— A chat app that <span className='text-warning'>actually</span> doesn't leak your data. —</p>
+            <p className='text-muted'>— A Notebook that <span className='text-warning'>actually</span> keep you <span style={{color: 'lightgreen'}}>connected</span> —</p>
           </div>
     </>
   )

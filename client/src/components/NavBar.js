@@ -14,7 +14,7 @@ function NavBar() {
   return (
     <Navbar collapseOnSelect expand="lg" className="bg-success">
       <Container>
-        <Link className="text-decoration-none text-light" style={{fontSize: '1.3rem'}} to='/'>Chat App</Link>
+        <Link className="text-decoration-none text-light" style={{fontSize: '1.3rem'}} to='/'><span style={{color: 'yellow', fontWeight: '600'}}>i</span>Notebook</Link>
         <Navbar.Toggle aria-controls="responsive-navbar-nav" />
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav className="me-auto">
