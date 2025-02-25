@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+//import React, { ReactNode } from 'react';
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -11,6 +12,7 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -27,7 +29,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="h-screen flex flex-col">
+          <header className="p-4 bg-blue-600 text-white flex justify-between items-center">
+            <h1 className="text-xl font-bold">Real-Time Chat App</h1>
+            {/* Optionally add a logout button here */}
+          </header>
+            <main className="flex-1">{children}</main>
+        </div>
       </body>
     </html>
   );
