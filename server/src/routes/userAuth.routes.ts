@@ -39,6 +39,7 @@ const loginSchema = z.object({
 router.post('/register', validate(registerSchema),registerUser)
 router.post('/login', validate(loginSchema),loginUser)
 router.get("/:id/verify/:token", verifyEmail);
+// GET /api/auth/users/:id - retrieve one user by id (protected)
 
 router.get("/profile", verifyToken, profileController);
 router.get("/messages/:userId", messageController);

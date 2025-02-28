@@ -60,7 +60,11 @@ export const profileUpdate = async (req: Request, res: Response): Promise<void> 
 export const peopleController = async (req: Request, res: Response): Promise<void> => {
     try {
        //✔ return verified users.
-      const users: IUser[] = await User.find({ verified: true });
+      //const users: IUser[] = await User.find({ verified: true });
+      const users: IUser[] = await User.find({
+        firstname: { $exists: true, $ne: null }, // provide user who has firstname and lastname
+        lastname: { $exists: true, $ne: null },
+      }).select("-password");
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);

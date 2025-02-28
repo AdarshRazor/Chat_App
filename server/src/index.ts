@@ -1,5 +1,5 @@
 // 📜 module import -
-import express from 'express';
+import express, {Request, Response} from 'express';
 import dotenv from "dotenv";
 import http from 'http';
 import cors from "cors";
@@ -35,11 +35,16 @@ const corsOptions: cors.CorsOptions = {
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   optionsSuccessStatus: 204,
   credentials: true,
+  exposedHeaders: ['authorization']
 };
 
 app.use(cors(corsOptions));
 
 // 🔗 APIs
+app.get('/', (req: Request, res: Response)=> {
+  res.send('✅ You hit the server ...')
+  return
+})
 // 👤 User amd Auth Router
 app.use('/api/auth', authRouter)
 app.use('/api/avatar', avatarRoute)

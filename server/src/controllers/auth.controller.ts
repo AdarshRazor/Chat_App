@@ -24,30 +24,38 @@ class ApiError extends Error {
 export const registerUser = asyncHandler(async (req: Request,res: Response):Promise<void> => {
     try{
         //no need to do that because already passing through a zod validation in authRoute
-        const { name, email, password } = req.body;
+        const { firstname, lastname, email, password } = req.body;
 
         // Check if a user with the same email already exists
         const existingUser = await User.findOne({ email });
         if (existingUser && existingUser.verified) {
         throw new ApiError(409, 'Email already registered');
         }
-        if (existingUser && existingUser.verificationLinkSent) {
-            res.status(400).send({message: 'A verification link has been already sent to this Email'})
-            return;
-        }
+        // if (existingUser && existingUser.verificationLinkSent) {
+        //     res.status(400).send({message: 'A verification link has been already sent to this Email'})
+        //     return;
+        // }
         
         // Save the user
-        const newUser = await new User({...req.body, verificationLinkSent: true}).save()
+        //const newUser = await new User({...req.body, verificationLinkSent: true}).save()
+        const newUser = await new User({firstname, lastname, email, password}).save()
 
         // Generate access and refresh tokens
         const { accessToken } = generateAuthToken(newUser);
 
         //verify using email
-        const url = `${process.env.BASE_URL}/users/${newUser._id}/verify/${accessToken}`;
-        await sendEmail(newUser.email, "Verify Email", url);
+        //const url = `${process.env.BASE_URL}/users/${newUser._id}/verify/${accessToken}`;
+        //await sendEmail(newUser.email, "Verify Email", url);
         
-        res.status(201)
-        .send({ message: `Verification Email Sent to ${newUser.email}`});
+        res.status(201).json({
+            status: 'success',
+            data: {
+                user: newUser.toAuthJSON(),
+                message: `"Registered User" + ${newUser.firstname}`
+            }
+        })
+        //.send({ message: `Verification Email Sent to ${newUser.email}`});
+        //res.status(201).send({ message: `User Registered to ${newUser.email}`});
     } catch (error){
         console.error("Error in registerController:", error);
         res.status(500).send({ message: "Internal Server Error" });
@@ -72,9 +80,9 @@ export const loginUser = async (req:Request, res: Response) => {
         }
 
         // Check if the user's email is verified
-        if (!user.verified) {
-            res.status(400).send({ message: "User email not verified" });
-        }
+        // if (!user.verified) {
+        //     res.status(400).send({ message: "User email not verified" });
+        // }
 
         // 🔻 refresh token and access token
         const { accessToken, refreshToken } = generateAuthToken(user);
@@ -88,10 +96,10 @@ export const loginUser = async (req:Request, res: Response) => {
 
         // Send refreshToken as a cookie (Recommended for security)
         res.cookie('refreshToken', refreshToken, { 
-        httpOnly: true, // Important: Prevents client-side JS access
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-        sameSite: 'strict', // Helps prevent CSRF attacks
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days (same as refreshToken expiry)
+            httpOnly: true, // Important: Prevents client-side JS access
+            secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+            sameSite: 'strict', // Helps prevent CSRF attacks
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days (same as refreshToken expiry)
         });
 
         // 🟢 send success in the end
@@ -100,7 +108,6 @@ export const loginUser = async (req:Request, res: Response) => {
         //  Do NOT send accessToken in the body anymore, it's in the header
         message: "Logged in successfully.",
         data: user.toAuthJSON()
-
         // data: {
         //   tokens: { accessToken, refreshToken }
         // },
