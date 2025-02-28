@@ -80,6 +80,7 @@ function ChatPage() {
 
         if (!res.ok) {
           const errData = await res.json();
+          router.push('/login')
           throw new Error(errData.message || "Failed to fetch user details.");
         }
 
