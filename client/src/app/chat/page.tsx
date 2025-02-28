@@ -36,7 +36,7 @@ function ChatPage() {
         }
 
         // Fetch the current user's details from the backend
-        const res = await fetch("http://localhost:3000/api/auth/profile", {
+        const res = await fetch("http://localhost:3000/api/auth/people", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -50,8 +50,8 @@ function ChatPage() {
           throw new Error(errData.message || "Failed to fetch user details.");
         }
 
-        const data: User = await res.json();
-        setUser(data);
+        const data: User[] = await res.json();
+        setUsers(data);
         console.log('logged in user',data)
       } catch (error:any){
         setError(error.message)
@@ -70,7 +70,7 @@ function ChatPage() {
         }
 
         // Fetch the current user's details from the backend
-        const res = await fetch("http://localhost:3000/api/auth/people", {
+        const res = await fetch("http://localhost:3000/api/auth/profile", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -83,8 +83,8 @@ function ChatPage() {
           throw new Error(errData.message || "Failed to fetch user details.");
         }
 
-        const data: User[] = await res.json();
-        setUsers(data);
+        const data: User = await res.json();
+        setUser(data);
         console.log('Online user',data)
       } catch (error:any){
         setError(error.message)
