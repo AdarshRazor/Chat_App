@@ -1,7 +1,9 @@
-'use client'
-import React ,{useEffect, useState} from 'react'
+'use client';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/authStore';
+import { useProfileStore } from '@/store/profileStore';
 
 interface User {
   _id: string;
@@ -13,125 +15,81 @@ interface User {
 }
 
 function ChatPage() {
-  const [user, setUser] = useState<User|null>(null);
-  const [users, setUsers] = useState<User[]|null>(null);
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true)
+  //const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[] | null>(null);
+  const [userror, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
+  const { checkAuth, logout } = useAuthStore();
+  const {fetchUserDetails, fetchAllUsersDetail, userDetails, isLoading, error, allUsers} = useProfileStore()
+  
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); // Clear the token
-    router.push("/"); // Redirect to login page
+    logout();
+    router.push('/');
   };
 
-  useEffect(()=>{
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = checkAuth();
 
-    const fetchAllUsersDetails = async () => {
-      try{
-        // Retrieve the token from localStorage
-        const token = localStorage.getItem("token");
         if (!token) {
           router.push('/login');
-          throw new Error("No token found. Please log in.");
+          return;
         }
+        await fetchUserDetails();
+        await fetchAllUsersDetail();
 
-        // Fetch the current user's details from the backend
-        const res = await fetch("http://localhost:3000/api/auth/people", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          router.push('/login')
-          throw new Error(errData.message || "Failed to fetch user details.");
-        }
-
-        const data: User[] = await res.json();
-        setUsers(data);
-        console.log('logged in user',data)
-      } catch (error:any){
-        setError(error.message)
+      // Log all users
+      } catch (error: any) {
+        setError(error.message);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    const fetchUserDetails = async () => {
-      try{
-        // Retrieve the token from localStorage
-        const token = localStorage.getItem("token");
-        if (!token) {
-          router.push('/login');
-          throw new Error("No token found. Please log in.");
-        }
+    fetchData();
+  }, [checkAuth, router, fetchUserDetails, fetchAllUsersDetail]);
 
-        // Fetch the current user's details from the backend
-        const res = await fetch("http://localhost:3000/api/auth/profile", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-          },
-        });
+  const filteredUsers = useMemo(() => {
+    if (!userDetails || !allUsers) return [];
+    return allUsers.filter(user => String(user._id) !== String(userDetails._id));
+  }, [userDetails, allUsers]);
 
-        if (!res.ok) {
-          const errData = await res.json();
-          router.push('/login')
-          throw new Error(errData.message || "Failed to fetch user details.");
-        }
-
-        const data: User = await res.json();
-        setUser(data);
-        console.log('Online user',data)
-      } catch (error:any){
-        setError(error.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchUserDetails();
-    fetchAllUsersDetails();
-  },[])
-
-  if (loading) {
-    return <div>Loading...</div>; // Show a loading indicator
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>; // Show an error message
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <>
-    <div>ChatPage</div>
-    <br/><hr/><br/>
-    <h1>Logged in user</h1>
-    {user && <>
-      <div>{user.firstname}</div>
-      <div>{user.lastname}</div>
-      <div>{user._id}</div>
-      </>
-    }
-    <br/><hr/><br/>
-    <h1>Online user</h1>
-    {users && user && users.filter((onlineUser) => onlineUser._id !== user._id).map((onlineUser:any) => (
-      <div key = {onlineUser._id}>
-        {onlineUser?.firstname} {onlineUser?.lastname} {onlineUser?._id} 
-      </div>
-    ))}
-
-    <div className="flex justify-end mt-20">
+      <div>ChatPage</div>
+      <br />
+      <hr />
+      <br />
+      <h1>Logged in user</h1>
+      {userDetails && (
+        <>
+          <div>{userDetails.firstname}</div>
+          <div>{userDetails.lastname}</div>
+          <div>{userDetails._id}</div>
+        </>
+      )}
+      <br />
+      <hr />
+      <br />
+      <h1>Online user</h1>
+      {filteredUsers.map((onlineUser) => (
+        <div key={onlineUser._id}>
+          {onlineUser?.firstname} {onlineUser?.lastname} {onlineUser?._id}
+        </div>
+      ))}
+      <div className="flex justify-end mt-20">
         <Button onClick={handleLogout} className="bg-red-500 hover:bg-red-600">
           Logout
         </Button>
       </div>
     </>
-  )
+  );
 }
 
-export default ChatPage
+export default ChatPage;
