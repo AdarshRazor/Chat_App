@@ -2,40 +2,26 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation'; 
 import Link from 'next/link'; 
+import { useAuthStore } from '@/store/authStore';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState("");
   const router = useRouter();
+  const { login, setAuthenticated } = useAuthStore(); // Destructure login and setAuthenticated from the store
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      console.log(data)
-
-      // Extract the access token from the response header
-      const authHeader = res.headers.get("authorization");
-      const accessToken = authHeader?.split(" ")[1];
-      if (!accessToken) {
-        setError("Login failed: No access token received.");
-        console.log("Login Failed");
-        return;
-      }
-
-      // Store the token in localStorage for later use (if needed)
-      localStorage.setItem("token", accessToken);
-
+      await login(email, password); // Use the login function from your authStore
+      setAuthenticated(true); // Manually set authenticated to true after successful login.
       router.push('/chat');
-
-    } catch (error) {
-      console.error('Login Error:', error);
+      console.log('redirecting to chat after auth')
+    } catch (err) {
+      console.error('Login Error:', err);
+      setError("Login failed. Please check your credentials.");
+      setAuthenticated(false);
     }
   };
 
@@ -46,6 +32,7 @@ export default function Login() {
         className="bg-white p-8 rounded shadow-md w-full max-w-md"
       >
         <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <div className="mb-4">
           <label className="block text-gray-700">Email</label>
           <input
