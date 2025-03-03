@@ -15,13 +15,10 @@ interface User {
 }
 
 function ChatPage() {
-  //const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[] | null>(null);
-  const [userror, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
   const { checkAuth, logout } = useAuthStore();
-  const {fetchUserDetails, fetchAllUsersDetail, userDetails, isLoading, error, allUsers} = useProfileStore()
+  const {fetchUserDetails, fetchAllUsersDetail, userDetails, isLoading, error, allUsers, needsRedirected, resetRedirectFlag} = useProfileStore()
   
 
   const handleLogout = () => {
@@ -38,12 +35,12 @@ function ChatPage() {
           router.push('/login');
           return;
         }
+
         await fetchUserDetails();
         await fetchAllUsersDetail();
-
       // Log all users
       } catch (error: any) {
-        setError(error.message);
+        console.log('[chatPage]fetchData Error: ',error.message);
       } finally {
         setLoading(false);
       }
@@ -51,6 +48,13 @@ function ChatPage() {
 
     fetchData();
   }, [checkAuth, router, fetchUserDetails, fetchAllUsersDetail]);
+
+  useEffect(() => {
+    if (needsRedirected) {
+      router.push('/login');
+      resetRedirectFlag();
+    }
+  }, [needsRedirected, router, resetRedirectFlag]);
 
   const filteredUsers = useMemo(() => {
     if (!userDetails || !allUsers) return [];
