@@ -38,7 +38,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       // First, check if the user is authenticated
       //useAuthStore.getState().checkAuth();
       const isAuthenticated = useAuthStore.getState().isAuthenticated;
-      console.log('auth done here', isAuthenticated)
 
       if (!isAuthenticated) {
         set({ userDetails: null, isLoading: false, error: "User not authenticated", needsRedirected: true });
@@ -80,7 +79,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       // First, check if the user is authenticated
       //useAuthStore.getState().checkAuth();
       const isAuthenticated = useAuthStore.getState().isAuthenticated;
-      console.log('auth done here')
 
       if (!isAuthenticated) {
         set({ userDetails: null, isLoading: false, error: "User not authenticated", needsRedirected: true });

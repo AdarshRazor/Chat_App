@@ -36,8 +36,10 @@ function ChatPage() {
           return;
         }
 
-        await fetchUserDetails();
-        await fetchAllUsersDetail();
+        // const fetchUser = await fetchUserDetails();
+        // const fetchAllUser = await fetchAllUsersDetail();
+        await Promise.all([fetchUserDetails(), fetchAllUsersDetail()]);
+
       // Log all users
       } catch (error: any) {
         console.log('[chatPage]fetchData Error: ',error.message);

@@ -4,7 +4,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 interface IMessage extends Document {
   sender: mongoose.Types.ObjectId;
   recipient: mongoose.Types.ObjectId;
-  text: string;
+  message: string;
   createdAt?: Date; // Optional because mongoose adds these
   updatedAt?: Date; // Optional because mongoose adds these
 }
@@ -14,7 +14,8 @@ const MessageSchema: Schema = new Schema(
   {
     sender: { type: Schema.Types.ObjectId, ref: "User" },
     recipient: { type: Schema.Types.ObjectId, ref: "User" },
-    text: { type: String, required: true },
+    message: { type: String, required: true },
+    createdAt: {type: Date, default: Date.now}
   },
   { timestamps: true }
 );
