@@ -25,7 +25,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           const authHeader = res.headers.get("authorization");
           console.log('authheader',authHeader)
           const accessToken = authHeader?.split(" ")[1];
-          console.log('authstore accesstoken', accessToken)
+          console.log('authstore accesstoken from authstore', accessToken)
           if (!accessToken) {
             //setError("Login failed: No access token received.");
             console.log("Login Failed");
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuthenticated: (value) => set({ isAuthenticated: value }),
   checkAuth: () => {
     const token = localStorage.getItem("token");
-    console.log("Checking authentication...");
+    console.log("[authStore]Checking authentication...");
     if (token) {
       console.log("Token exists. Setting authenticated to true.");
       set({ isAuthenticated: true });

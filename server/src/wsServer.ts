@@ -1,116 +1,166 @@
-import { Server, IncomingMessage } from 'http';
-import WebSocket, { WebSocketServer } from "ws";
-import User from './models/user.model';
-//import jwt from "jsonwebtoken";
 import Message from './models/message.model';
-import cookie from "cookie";
 import { verifyAuthToken } from './utils/jwt.utils';
+import { Server } from "socket.io";
+import { createServer } from "http";
+import express from "express";
+import mongoose from "mongoose";
+import { JwtPayload } from 'jsonwebtoken';
 
-interface ExtendedWebSocket extends WebSocket {
-    userId?: string;
-    username?: string;
-    isAlive?: boolean;
-    timer?: NodeJS.Timeout;
-    deathTimer?: NodeJS.Timeout;
-}
+// Create Express app and HTTP server
+const app = express();
+const httpServer = createServer(app);
 
-// Creating the WebSocket Server
-export const createWebSocketServer = (server: Server) => {
-    const wss = new WebSocketServer({ server });
+// Create Socket.IO server with CORS configuration
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
-    // 🔰 Handling Client Connection
-    wss.on("connection", (connection: ExtendedWebSocket, req: IncomingMessage) => {
-        // 👾 Extracting & Verifying JWT Token
-        const cookies = req.headers.cookie ? cookie.parse(req.headers.cookie) : {};
-        const token = cookies.authorization; // 🔴 troubleshootif issue (cookies.authToken)
-        if (!token) {
-            connection.close(1008, "Unauthorized");
-            throw new Error("Unauthorized: No token in cookies");
+// Store active users
+const activeUsers = new Map();
+
+// Middleware to authenticate socket connections
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    if (!token) {
+      return next(new Error("Authentication error: Token missing"));
+    }
+
+    const decoded = verifyAuthToken(token) as JwtPayload | null; // Type assertion
+
+    if (!decoded || !decoded.userId) { // Check if decoded is not null and userId exists
+      return next(new Error("Authentication error: Invalid token"));
+    }
+
+    socket.data.userId = decoded.userId;
+    next();
+  } catch (error) {
+    return next(new Error("Authentication error: Invalid token"));
+  }
+});
+
+io.on("connection", async (socket) => {
+  const userId = socket.data.userId;
+  
+  // Store user connection
+  activeUsers.set(userId, socket.id);
+  
+  // Inform other users about new user online
+  io.emit("user_status", { userId, status: "online" });
+  
+  console.log(`User ${userId} connected. Socket ID: ${socket.id}`);
+  
+  // Send the active users list to the newly connected user
+  const onlineUsers = Array.from(activeUsers.keys());
+  socket.emit("active_users", onlineUsers);
+
+  // Handle private messages
+  socket.on("private_message", async (data) => {
+    try {
+      const { receiverId, message } = data;
+      
+      // Create and save message to database
+      const chat = new Message({
+        sender: new mongoose.Types.ObjectId(userId),
+        receiver: new mongoose.Types.ObjectId(receiverId),
+        message,
+        createdAt: new Date(),
+        read: false
+      });
+      
+      await chat.save();
+      
+      // Get receiver's socket if they're online
+      const receiverSocketId = activeUsers.get(receiverId);
+      
+      // Format message for sending
+      const messageData = {
+        _id: chat._id,
+        sender: userId,
+        receiver: receiverId,
+        message,
+        createdAt: chat.createdAt,
+        read: false
+      };
+      
+      // Send to sender (for their chat history)
+      socket.emit("private_message", messageData);
+      
+      // Send to receiver if online
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("private_message", messageData);
+      }
+    } catch (error) {
+      console.error("Error handling private message:", error);
+    }
+  });
+
+  // Handle message read status
+  socket.on("mark_as_read", async (data) => {
+    try {
+      const { messageId } = data;
+      
+      // Update message in database
+      await Message.findByIdAndUpdate(messageId, { read: true });
+      
+      // Notify relevant users
+      socket.emit("message_read", { messageId });
+      
+      const message = await Message.findById(messageId);
+      if (message) {
+        const senderSocketId = activeUsers.get(message.sender.toString());
+        if (senderSocketId) {
+          io.to(senderSocketId).emit("message_read", { messageId });
         }
-        // 👤 user details
-        const userData: any = verifyAuthToken(token);
-        connection.userId = userData._id;
-        connection.username = `${userData.firstName} ${userData.lastName}`;
+      }
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  });
 
-        console.log(`WebSocket connected: ${connection.username}`);
+  // Handle typing status
+  socket.on("typing", (data) => {
+    const { receiverId } = data;
+    const receiverSocketId = activeUsers.get(receiverId);
+    
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("typing", { userId });
+    }
+  });
 
-        // 👥 Retrieves a list of all connected users.
-        const notifyAboutOnlinePeople = async () => {
-            // 🔰 retrieve online users
-            const onlineUsers = await Promise.all(
-                Array.from(wss.clients).map(async (client) => {
-                    const extendedClient = client as ExtendedWebSocket;
-                    if (!extendedClient.userId) return null;
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    // Remove from active users
+    for (let [key, value] of activeUsers.entries()) {
+      if (value === socket.id) {
+        activeUsers.delete(key);
+        
+        // Inform other users about offline status
+        io.emit("user_status", { userId: key, status: "offline" });
+        
+        console.log(`User ${key} disconnected`);
+        break;
+      }
+    }
+  });
+});
 
-                    const user = await User.findById(extendedClient.userId);
-                    return {
-                        userId: extendedClient.userId,
-                        username: extendedClient.username,
-                        avatarLink: user ? user.avatarLink : null,
-                    };
-                })
-            );
-            //🔲 filter out null values
-            const filteredUsers = onlineUsers.filter((user) => user !== null);
-            // 🔈 broadcast online user list
-            wss.clients.forEach((client) => {
-                client.send(
-                    JSON.stringify({
-                        online: filteredUsers,
-                    })
-                );
-            });
-        };
-
-        // Notify other users about online status
-        notifyAboutOnlinePeople();
-
-        // 🔻 Heartbeat Mechanism (Detecting Disconnected Clients)
-        connection.isAlive = true;
-        // ping every 5 sec and mark disconnecteed if marked and remove.
-        connection.timer = setInterval(() => {
-            connection.ping();
-            connection.deathTimer = setTimeout(() => {
-                connection.isAlive = false;
-                clearInterval(connection.timer!);
-                connection.terminate();
-                notifyAboutOnlinePeople();
-                console.log("dead");
-            }, 1000);
-        }, 5000);
-        //The pong event resets the timer, indicating that the client is still alive.
-        connection.on("pong", () => {
-            clearTimeout(connection.deathTimer!);
-        });
-
-        // 🔻 Handling Incoming Messages
-        connection.on("message", async (message: WebSocket.RawData) => {
-            try {
-                const messageData = JSON.parse(message.toString());
-                const { recipient, text } = messageData;
-                if (!connection.userId || !recipient || !text) return;
-
-                const msgDoc = await Message.create({
-                    sender: connection.userId,
-                    recipient,
-                    text,
-                });
-
-                wss.clients.forEach((client) => {
-                    const extendedClient = client as ExtendedWebSocket;
-                    if (extendedClient.userId === recipient) {
-                        client.send(
-                            JSON.stringify({
-                                sender: connection.username,
-                                text,
-                                id: msgDoc._id,
-                            })
-                        );
-                    }
-                });
-            } catch (error) {
-                console.error("Error processing message:", error);
-            }
-        });
+export const startSocketServer = (port: number) => {
+    httpServer.listen(port, () => {
+        console.log(`Socket.IO server attempting to run on port ${port}`);
     });
+
+    httpServer.on('listening', ()=>{
+        console.log(`Socket.IO server running on port ${port}`);
+    })
+
+    httpServer.on('error', (error)=>{
+        console.log(`Socket.IO server error: ${error}`);
+    })
+
+    return io;
 };
