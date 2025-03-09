@@ -13,24 +13,23 @@ import {
 } from "@/components/ui/tooltip";
 import { useRouter } from "next/navigation";
 import { useChatStore } from '@/store/chatStore';
+import { useSocketStore } from '@/store/socketStore';
+import { useAuthStore } from '@/store/authStore';
 
 interface Message {
     _id: string;
-    chatId: string;
     sender: string;
-    recipients: string[];
-    content: string;
-    chatType: 'direct' | 'group';
+    receiver: string;
+    message: string;
     createdAt: string;
+    read: boolean;
 }
 
 interface User {
     _id: string;
-    name: string;
+    firstname: string;
+    lastname: string;
     email: string;
-    role: string;
-    rollNo?: string;
-    courses?: any;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -40,17 +39,32 @@ interface ChatMessageProps {
     loggedin: User | null;
 }
 
-interface ChatBoxProps {
-    selectedUser: User | null;
-}
-
 export default function ChatBox() {
     const [loading, setLoading] = useState(true);
     const [loggedin, setLoggedin] = useState<User | null>(null);
     const [conversation, setConversation] = useState<Message[]>([]);
     const router = useRouter();
     const { selectedUser } = useChatStore();
+    const { socket } = useSocketStore();
+    const { checkAuth } = useAuthStore();
 
+    useEffect(() => {
+        const token = checkAuth();
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        if (socket) {
+            socket.on('private_message', (message: Message) => {
+                setConversation(prev => [...prev, message]);
+            });
+
+            return () => {
+                socket.off('private_message');
+            };
+        }
+    }, [socket, router, checkAuth]);
 
     const generateAvatarUrl = (seed: string | undefined) => {
         return `https://api.dicebear.com/9.x/adventurer/svg?seed=${seed}`;
@@ -60,12 +74,22 @@ export default function ChatBox() {
         <Card className="m-2 flex-grow flex flex-col">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="font-semibold flex items-center">
-                    <Avatar className="mx-2">
-                        <AvatarImage
-                            src={generateAvatarUrl(selectedUser?.firstname)}
-                        />
-                    </Avatar>
-                    {selectedUser?.firstname} ({selectedUser?._id})
+                    {
+                      selectedUser ? (
+                        <>
+                        <Avatar className="mx-2">
+                            <AvatarImage
+                                src={generateAvatarUrl(selectedUser?.firstname)}
+                            />
+                        </Avatar>
+                        {selectedUser?.firstname} ({selectedUser?._id})
+                        </>
+                      ) : (
+                        <p>
+                          Select a user to start the chat
+                        </p>                        
+                      )
+                    }
                 </CardTitle>
                 <BellRing />
             </CardHeader>
@@ -105,10 +129,8 @@ export default function ChatBox() {
     );
 }
 
-
 function ChatMessage({ message, loggedin }: ChatMessageProps) {
-  // Safely determine if the message was sent by the logged-in user
-  const isLoggedInUser = loggedin ? message.sender === loggedin._id : false
+  const isLoggedInUser = loggedin ? message.sender === loggedin._id : false;
 
   return (
     <Tooltip>
@@ -120,14 +142,14 @@ function ChatMessage({ message, loggedin }: ChatMessageProps) {
               : "bg-gray-200 text-black"
           }`}
         >
-          {message.content}
+          {message.message}
         </div>
       </TooltipTrigger>
       <TooltipContent>
         <span className="text-xs text-white">{message.createdAt}</span>
       </TooltipContent>
     </Tooltip>
-  )
+  );
 }
 
 export function RecieveSkeleton() {
@@ -139,5 +161,5 @@ export function RecieveSkeleton() {
         <Skeleton className="h-4 w-[200px]" />
       </div>
     </div>
-  )
+  );
 }

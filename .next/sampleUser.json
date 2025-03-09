@@ -1,15 +1,21 @@
 [
     {
-    "firstname": "Adarsh",
-    "lastname": "Anand",
-    "email": "adarsh@chatapp.com",
-    "password": "password123"
+        "firstname": "Adarsh",
+        "lastname": "Anand",
+        "email": "adarsh@chatapp.com",
+        "password": "password123"
     },
     {
-    "firstname": "Just",
-    "lastname": "Anshu",
-    "email": "anshu@chatapp.com",
-    "password": "password123"
+        "firstname": "Just",
+        "lastname": "Anshu",
+        "email": "anshu@chatapp.com",
+        "password": "password123"
   
+    },
+    {
+        "firstname": "jhantu",
+        "lastname": "jhat",
+        "email": "jhantu@chatapp.com",
+        "password": "password123"
     }
 ]
