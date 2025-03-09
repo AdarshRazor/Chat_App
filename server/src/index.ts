@@ -1,14 +1,13 @@
 // 📜 module import -
 import express, {Request, Response} from 'express';
 import dotenv from "dotenv";
-import http from 'http';
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from './config/db.config'
 import authRouter from './routes/userAuth.routes'
 import avatarRoute from './routes/avatar.routes'
+import chatRouter from "./routes/chat.routes"
 import { startSocketServer } from './wsServer';
-//import fs from 'fs';
 
 dotenv.config();
 
@@ -60,6 +59,7 @@ app.get('/', (req: Request, res: Response)=> {
 // 👤 User amd Auth Router
 app.use('/api/auth', authRouter)
 app.use('/api/avatar', avatarRoute)
+app.use('/api/chat', chatRouter)
 
 // 📩 WebSocket
 startSocketServer(3002);

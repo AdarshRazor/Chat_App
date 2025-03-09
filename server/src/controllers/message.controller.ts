@@ -8,33 +8,32 @@ interface AuthRequest extends Request {
   decodedToken?: JwtPayload; // Add a new property
 }
 
-const messageController = async (req: AuthRequest, res: Response): Promise<void> => {
+const messageController = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
-    const authHeader = req.headers.authorization;
+    // const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ message: "Unauthorized: No token provided" });
-      return;
-    }
+    // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    //   res.status(401).json({ message: "Unauthorized: No token provided" });
+    //   return;
+    // }
 
-    const token = authHeader.split(" ")[1];
-    const userData = verifyAuthToken(token);
+    // const token = authHeader.split(" ")[1];
+    // const userData = verifyAuthToken(token);
 
-    if (!userData) {
-      res.status(401).json({ message: "Unauthorized: Invalid token" });
-      return;
-    }
+    // if (!userData) {
+    //   res.status(401).json({ message: "Unauthorized: Invalid token" });
+    //   return;
+    // }
 
-    const ourUserId = (userData as JwtPayload).id; // Access id from JwtPayload
-    console.log("userData", userData);
-    console.log("ourUserId", ourUserId);
-    console.log("userId", userId);
+    // const ourUserId = (userData as JwtPayload).id; // Access id from JwtPayload
+    // console.log("userData", userData);
+    // console.log("ourUserId", ourUserId);
+    // console.log("userId", userId);
 
-    const messages = await Message.find({
-      sender: { $in: [userId, ourUserId] },
-      recipient: { $in: [userId, ourUserId] },
-    }).sort({ createdAt: 1 });
+    console.log("Fetching messages for sender:", userId);
+    const messages = await Message.find({ sender: userId }).sort({ createdAt: 1 });
+    console.log("Query result:", messages);
 
     res.json(messages);
     console.log("messages", messages);
